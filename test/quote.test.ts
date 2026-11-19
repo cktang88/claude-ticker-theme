@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { chartSvg } from '../hooks/chart'
-import { quoteAddress, readQuote } from '../hooks/quote'
+import { isFresh, quoteAddress, readQuote } from '../hooks/quote'
 
 const answer = (minutes: (number | null)[], price: number, close: { chartPreviousClose?: number } = {}) =>
   JSON.stringify({
@@ -63,4 +63,13 @@ test('colors the price red below the open and keeps it clear of the open label',
 
 test('draws an empty white page before the first price arrives', () => {
   expect(chartSvg(undefined)).toBe('<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="#fff"/></svg>')
+})
+
+test('uses a quote another session saved only while it is recent and for the same stock', () => {
+  const quote = { symbol: 'ANT', base: 83, baseLabel: 'prev close' as const, price: 95, points: [95] }
+
+  expect(isFresh({ at: 1000, quote }, 'ANT', 9000, 9000)).toBe(true)
+  expect(isFresh({ at: 1000, quote }, 'ANT', 10_000, 9000)).toBe(false)
+  expect(isFresh({ at: 1000, quote }, 'AAPL', 2000, 9000)).toBe(false)
+  expect(isFresh(undefined, 'ANT', 2000, 9000)).toBe(false)
 })

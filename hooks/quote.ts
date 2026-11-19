@@ -52,3 +52,13 @@ export function readQuote(text: string): Quote | undefined {
 
   return { symbol, ...base, price, points: [...closes, price] }
 }
+
+/** What one session saves for the others: the quote and when it was fetched. */
+export type SavedQuote = { at: number; quote: Quote }
+
+/** True when a saved quote is the right stock and recent enough to use instead of fetching again. */
+export function isFresh(saved: unknown, symbol: string, now: number, maxAgeMs: number): saved is SavedQuote {
+  const entry = saved as Partial<SavedQuote> | undefined
+
+  return typeof entry?.at === 'number' && entry.quote?.symbol === symbol && now - entry.at < maxAgeMs
+}

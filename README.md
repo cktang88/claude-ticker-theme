@@ -10,6 +10,8 @@ A white page with one stock's day drawn as a single soft line, **updating live e
 
 Every 10 seconds the theme fetches the latest price. The end of the line and the number move with it, and a new point joins the line each minute. When the price has not changed, nothing is redrawn.
 
+With the theme open in many sessions, they share one saved copy of the price: whichever session looks first after it is ten seconds old fetches it, and the rest read that copy. So ten open sessions still make about one request every ten seconds, not ten.
+
 ## What it shows
 
 - **The line:** today's price from the open at the left to now at the right, smoothed so it flows instead of jitters. Green where it is at or above yesterday's close, red below it, with a faint wash between the two.

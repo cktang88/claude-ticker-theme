@@ -5,12 +5,14 @@ import type { EngineInterface, Register, ThemeSetArgs } from 'claude-code'
 
 import { chartSvg } from './chart'
 import { makeColors } from './make-colors.js'
-import { quoteAddress, readQuote } from './quote'
+import { isFresh, quoteAddress, readQuote } from './quote'
 import type { Quote } from './quote'
 
 // TODO(kwuang): let the person choose the stock when more than this one is wanted.
 const SYMBOL = 'ANT'
 const EVERY_MS = 10_000
+/** The store key every session of this theme reads and writes. The store is shared by all sessions on the machine. */
+const SAVED = 'latest-quote'
 const COMMAND = 'ticker'
 const SCENE = 'ticker'
 
@@ -53,10 +55,28 @@ function backdropSource(): string {
   return built.source
 }
 
-/** Fetches the price and asks for a new picture when it moved. A failed fetch keeps the last picture. */
-async function refresh($: EngineInterface): Promise<void> {
+/** The latest quote: the one another session saved in the last ten seconds, or a fresh fetch saved for the others. */
+async function latestQuote($: EngineInterface): Promise<Quote | undefined> {
+  const now = await $.clock.now()
+  const saved = await $.store.get(SAVED)
+
+  if (isFresh(saved, SYMBOL, now, EVERY_MS - 1000)) {
+    return saved.quote
+  }
+
   const answer = await $.http.fetch(quoteAddress(SYMBOL), { headers: { 'user-agent': 'Mozilla/5.0' } })
-  const fresh = answer.ok ? readQuote(answer.text) : undefined
+  const fetched = answer.ok ? readQuote(answer.text) : undefined
+
+  if (fetched !== undefined) {
+    await $.store.set(SAVED, { at: now, quote: fetched })
+  }
+
+  return fetched
+}
+
+/** Asks for a new picture when the price moved. A failed fetch keeps the last picture. */
+async function refresh($: EngineInterface): Promise<void> {
+  const fresh = await latestQuote($)
 
   if (fresh === undefined || (fresh.price === latest?.price && fresh.points.length === latest.points.length)) {
     return

@@ -1,0 +1,15 @@
+{
+  "name": "claude-ticker-theme",
+  "owner": {
+    "name": "cktang88"
+  },
+  "metadata": {
+    "description": "A minimalist live stock price theme for the Claude desktop app."
+  },
+  "plugins": [
+    {
+      "name": "ticker-theme",
+      "source": "./"
+    }
+  ]
+}

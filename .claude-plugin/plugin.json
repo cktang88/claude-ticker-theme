@@ -1,0 +1,9 @@
+{
+  "name": "ticker-theme",
+  "version": "1.0.0",
+  "description": "Ticker theme: a white page with one stock's day as a single jagged line for the Claude desktop app, with the day's opening price and the live price, fetched every ten seconds.",
+  "author": {
+    "name": "cktang88"
+  },
+  "license": "MIT"
+}

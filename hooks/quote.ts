@@ -73,3 +73,55 @@ export function isTradingHours(now: number): boolean {
 
   return weekday !== 'Sat' && weekday !== 'Sun' && hour >= 4 && hour < 20
 }
+
+/** The last five trading days of one stock, for when the market is closed: each day's prices, every 15 minutes. */
+export type Week = { symbol: string; days: number[][] }
+
+export function weekAddress(symbol: string): string {
+  return `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=15m&range=5d`
+}
+
+const newYorkDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' })
+
+/** Gives the week split into days by New York date, or nothing when the answer has no prices. */
+export function readWeek(text: string): Week | undefined {
+  let answer: YahooChart & { chart?: { result?: { timestamp?: number[] }[] } }
+
+  try {
+    answer = JSON.parse(text) as typeof answer
+  } catch {
+    return undefined
+  }
+
+  const result = answer.chart?.result?.[0]
+  const symbol = result?.meta?.symbol
+  const times = result?.timestamp ?? []
+  const closes = result?.indicators?.quote?.[0]?.close ?? []
+  const days = new Map<string, number[]>()
+
+  times.forEach((time, index) => {
+    const close = closes[index]
+
+    if (isPrice(close)) {
+      const day = newYorkDate.format(time * 1000)
+
+      days.set(day, [...(days.get(day) ?? []), close])
+    }
+  })
+
+  return symbol === undefined || days.size === 0 ? undefined : { symbol, days: [...days.values()] }
+}
+
+/** When trading starts again, as a short note such as "opens Mon 4:00 am". */
+export function opensNote(now: number): string {
+  const hour = 60 * 60 * 1000
+  let at = now
+
+  while (!isTradingHours(at) && at - now < 4 * 24 * hour) {
+    at += hour
+  }
+
+  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short' }).format(at)
+
+  return `closed · opens ${weekday} 4:00 am`
+}

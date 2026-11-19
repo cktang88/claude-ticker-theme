@@ -8,7 +8,7 @@ A white page with one stock's day drawn as a single soft line, **updating live e
 
 ## Live updates
 
-Every 10 seconds from 4 am to 8 pm New York time on weekdays (pre-market, the regular session and after-hours), the theme fetches the latest price. Outside those hours it stops asking and keeps the last picture. The end of the line and the number move with it, and a new point joins the line each minute. When the price has not changed, nothing is redrawn.
+Every 10 seconds from 4 am to 8 pm New York time on weekdays (pre-market, the regular session and after-hours), the theme fetches the latest price. Outside those hours it stops asking and shows the last five trading days instead, as one faint gray line with a mark between days and a small note saying when trading opens again. The end of the line and the number move with it, and a new point joins the line each minute. When the price has not changed, nothing is redrawn.
 
 With the theme open in many sessions, they share one saved copy of the price: whichever session looks first after it is ten seconds old fetches it, and the rest read that copy. So ten open sessions still make about one request every ten seconds, not ten.
 

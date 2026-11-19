@@ -4,16 +4,19 @@
 
 import type { EngineInterface, Register, ThemeSetArgs } from 'claude-code'
 
-import { chartSvg } from './chart'
+import { chartSvg, weekSvg } from './chart'
 import { makeColors } from './make-colors.js'
-import { isFresh, isTradingHours, quoteAddress, readQuote } from './quote'
-import type { Quote } from './quote'
+import { isFresh, isTradingHours, opensNote, quoteAddress, readQuote, readWeek, weekAddress } from './quote'
+import type { Quote, Week } from './quote'
 
 // TODO(kwuang): let the person choose the stock when more than this one is wanted.
 const SYMBOL = 'ANT'
 const EVERY_MS = 10_000
 /** The store key every session of this theme reads and writes. The store is shared by all sessions on the machine. */
 const SAVED = 'latest-quote'
+const SAVED_WEEK = 'latest-week'
+/** While the market is closed, sessions share one fetch of the week for this long. */
+const WEEK_MAX_AGE_MS = 6 * 60 * 60 * 1000
 const COMMAND = 'ticker'
 const SCENE = 'ticker'
 
@@ -46,11 +49,15 @@ const LOOK = {
  * kept here and the picture is built once per quote.
  */
 let latest: Quote | undefined
-let built: { from: Quote | undefined; source: string } | undefined
+/** While the market is closed: the week to draw, and when trading opens again. */
+let closed: { week: Week; note: string } | undefined
+let built: { from: Quote | typeof closed; source: string } | undefined
 
 function backdropSource(): string {
-  if (built === undefined || built.from !== latest) {
-    built = { from: latest, source: chartSvg(latest) }
+  const from = closed ?? latest
+
+  if (built === undefined || built.from !== from) {
+    built = { from, source: closed === undefined ? chartSvg(latest) : weekSvg(closed.week, closed.note) }
   }
 
   return built.source
@@ -65,11 +72,6 @@ async function latestQuote($: EngineInterface): Promise<Quote | undefined> {
     return saved.quote
   }
 
-  // Outside trading hours the price cannot move, so a saved one of any age will do.
-  if (!isTradingHours(now) && isFresh(saved, SYMBOL, now, Infinity)) {
-    return saved.quote
-  }
-
   const answer = await $.http.fetch(quoteAddress(SYMBOL), { headers: { 'user-agent': 'Mozilla/5.0' } })
   const fetched = answer.ok ? readQuote(answer.text) : undefined
 
@@ -80,19 +82,53 @@ async function latestQuote($: EngineInterface): Promise<Quote | undefined> {
   return fetched
 }
 
-/** Asks for a new picture when the price moved. A failed fetch keeps the last picture. */
+/** The week, fetched once per closed stretch and shared like the day's quote. */
+async function latestWeek($: EngineInterface, now: number): Promise<Week | undefined> {
+  const saved = (await $.store.get(SAVED_WEEK)) as { at?: number; week?: Week } | undefined
+
+  if (saved?.week?.symbol === SYMBOL && typeof saved.at === 'number' && now - saved.at < WEEK_MAX_AGE_MS) {
+    return saved.week
+  }
+
+  const answer = await $.http.fetch(weekAddress(SYMBOL), { headers: { 'user-agent': 'Mozilla/5.0' } })
+  const week = answer.ok ? readWeek(answer.text) : undefined
+
+  if (week !== undefined) {
+    await $.store.set(SAVED_WEEK, { at: now, week })
+  }
+
+  return week
+}
+
+/** Asks for a new picture when the price moved, or when the market opened or closed. A failed fetch keeps the last picture. */
 async function refresh($: EngineInterface): Promise<void> {
-  if (latest !== undefined && !isTradingHours(await $.clock.now())) {
+  const now = await $.clock.now()
+
+  if (!isTradingHours(now)) {
+    if (closed === undefined) {
+      const week = await latestWeek($, now)
+
+      if (week !== undefined) {
+        closed = { week, note: opensNote(now) }
+        $.ui.invalidate('ui.render')
+      }
+    }
+
     return
   }
 
+  const wasClosed = closed !== undefined
   const fresh = await latestQuote($)
 
-  if (fresh === undefined || (fresh.price === latest?.price && fresh.points.length === latest.points.length)) {
+  closed = undefined
+
+  const isSame = fresh === undefined || (fresh.price === latest?.price && fresh.points.length === latest.points.length)
+
+  if (isSame && !wasClosed) {
     return
   }
 
-  latest = fresh
+  latest = fresh ?? latest
   $.ui.invalidate('ui.render')
 }
 

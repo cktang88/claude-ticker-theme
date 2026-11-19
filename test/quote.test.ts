@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
-import { chartSvg } from '../hooks/chart'
-import { isFresh, isTradingHours, quoteAddress, readQuote } from '../hooks/quote'
+import { chartSvg, weekSvg } from '../hooks/chart'
+import { isFresh, isTradingHours, opensNote, quoteAddress, readQuote, readWeek } from '../hooks/quote'
 
 const answer = (minutes: (number | null)[], close: { chartPreviousClose?: number } = {}) =>
   JSON.stringify({
@@ -80,4 +80,26 @@ test('trades from 4 am to 8 pm New York time on weekdays', () => {
   expect(isTradingHours(Date.parse('2026-11-20T00:59:00Z'))).toBe(true)
   expect(isTradingHours(Date.parse('2026-11-20T01:00:00Z'))).toBe(false)
   expect(isTradingHours(Date.parse('2026-11-21T15:00:00Z'))).toBe(false)
+})
+
+test('splits the week into days by New York date', () => {
+  const thursdayClose = Date.parse('2026-11-19T20:45:00Z') / 1000
+  const fridayOpen = Date.parse('2026-11-20T14:30:00Z') / 1000
+  const text = JSON.stringify({
+    chart: { result: [{ meta: { symbol: 'ANT' }, timestamp: [thursdayClose, fridayOpen, fridayOpen + 900], indicators: { quote: [{ close: [97.1, null, 95.2] }] } }] },
+  })
+
+  expect(readWeek(text)).toEqual({ symbol: 'ANT', days: [[97.1], [95.2]] })
+})
+
+test('says when trading opens again', () => {
+  expect(opensNote(Date.parse('2026-11-21T02:00:00Z'))).toBe('closed · opens Mon 4:00 am')
+  expect(opensNote(Date.parse('2026-11-20T02:00:00Z'))).toBe('closed · opens Fri 4:00 am')
+})
+
+test('draws the week as one line with a mark between each day, and the note', () => {
+  const picture = weekSvg({ symbol: 'ANT', days: [[90, 91], [92, 93], [94, 95]] }, 'closed · opens Mon 4:00 am')
+
+  expect(picture.match(/V\d/g)?.length).toBe(2)
+  expect(picture).toContain('>closed · opens Mon 4:00 am</text>')
 })

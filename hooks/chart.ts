@@ -3,7 +3,7 @@
 // the base, and two numbers sit at the right (the base and the price now). The line is drawn in a 1000-unit box
 // stretched to the window; its stroke keeps its width.
 
-import type { Quote } from './quote'
+import type { Quote, Week } from './quote'
 
 const BOX = 1000
 const LINE = { left: 0, right: 935, top: 340, bottom: 660 } as const
@@ -42,11 +42,37 @@ function smoothPath(xy: readonly (readonly [number, number])[]): string {
   return path
 }
 
-export function chartSvg(quote: Quote | undefined): string {
-  const page = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="#fff"/>'
+const PAGE = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="#fff"/>'
 
+/** The picture while the market is closed: the last five days as one faint gray line, a thin mark between days. */
+export function weekSvg(week: Week, note: string): string {
+  const all = week.days.flat()
+  const low = Math.min(...all)
+  const span = Math.max(...all) - low || 1
+  const down = (price: number) => LINE.bottom - ((price - low) / span) * (LINE.bottom - LINE.top)
+  const across = (index: number) => LINE.left + (index / Math.max(1, all.length - 1)) * (LINE.right - LINE.left)
+  const line = smoothPath(eased(all).map((price, index) => [across(index), down(price)] as const))
+  let marks = ''
+  let start = 0
+
+  for (const day of week.days.slice(0, -1)) {
+    start += day.length
+    marks += `M${across(start - 0.5).toFixed(1)} ${LINE.top - 30}V${LINE.bottom + 30}`
+  }
+
+  return (
+    PAGE +
+    `<svg width="100%" height="100%" viewBox="0 0 ${BOX} ${BOX}" preserveAspectRatio="none">` +
+    `<path d="${marks}" stroke="${QUIET}" stroke-opacity=".25" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>` +
+    `<path d="${line}" fill="none" stroke="${QUIET}" stroke-opacity=".45" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>` +
+    `<text x="99%" y="${share(LINE.bottom + 50)}" text-anchor="end" ${LETTERS} font-size="10" fill="${QUIET}">${note}</text>` +
+    '</svg>'
+  )
+}
+
+export function chartSvg(quote: Quote | undefined): string {
   if (quote === undefined) {
-    return `${page}</svg>`
+    return `${PAGE}</svg>`
   }
 
   const points = eased(quote.points)
@@ -72,7 +98,7 @@ export function chartSvg(quote: Quote | undefined): string {
     `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity=".22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></g>`
 
   return (
-    page +
+    PAGE +
     `<line x1="0" y1="${share(baseAt)}" x2="100%" y2="${share(baseAt)}" stroke="${QUIET}" stroke-width="1" stroke-dasharray="1 7" stroke-linecap="round"/>` +
     `<svg width="100%" height="100%" viewBox="0 0 ${BOX} ${BOX}" preserveAspectRatio="none"><defs>` +
     `<clipPath id="up"><rect x="-10" y="-10" width="${BOX + 20}" height="${(baseAt + 10).toFixed(1)}"/></clipPath>` +

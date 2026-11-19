@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test'
 
 import { chartSvg, weekSvg } from '../hooks/chart'
-import { isFresh, isTradingHours, opensNote, quoteAddress, readQuote, readWeek } from '../hooks/quote'
+import { isFresh, isTradingHours, nextOpen, opensNote, quoteAddress, readQuote, readWeek } from '../hooks/quote'
 
 const answer = (minutes: (number | null)[], close: { chartPreviousClose?: number } = {}) =>
   JSON.stringify({
@@ -109,4 +109,18 @@ test('joins one day to the next with a straight stroke, so the overnight jump sh
   const line = picture.match(/<path d="(M[^"]+)" fill="none"/)?.[1] ?? ''
 
   expect(line.match(/L/g)?.length).toBe(1)
+})
+
+test('grays out the day after the close and says when trading opens', () => {
+  const picture = chartSvg({ symbol: 'ANT', baseLabel: 'prev close', base: 83, price: 98.7, points: [83.5, 98.7] }, 'closed · opens Fri 4:00 am')
+
+  expect(picture).not.toContain('#3f9d6e')
+  expect(picture).toContain('>closed · opens Fri 4:00 am</text>')
+})
+
+test('opens again the next morning on a weeknight, and after the weekend on Friday night', () => {
+  const hours = (from: string) => (nextOpen(Date.parse(from)) - Date.parse(from)) / 3_600_000
+
+  expect(hours('2026-11-20T01:30:00Z')).toBeLessThan(12)
+  expect(hours('2026-11-21T01:30:00Z')).toBeGreaterThan(12)
 })

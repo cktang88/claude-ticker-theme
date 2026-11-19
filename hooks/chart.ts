@@ -81,7 +81,8 @@ export function weekSvg(week: Week, note: string): string {
   )
 }
 
-export function chartSvg(quote: Quote | undefined): string {
+/** The day's picture. With a `closed` note (a weeknight), it is all gray and says when trading opens. */
+export function chartSvg(quote: Quote | undefined, closed?: string): string {
   if (quote === undefined) {
     return `${PAGE}</svg>`
   }
@@ -99,14 +100,15 @@ export function chartSvg(quote: Quote | undefined): string {
   const wash = `${line}L${LINE.right} ${baseAt.toFixed(1)}L${LINE.left} ${baseAt.toFixed(1)}Z`
   // The price is written beside the line's end. When that is too near the base's label, it moves away from it.
   const priceAt = Math.abs(tipAt - baseAt) < CLEAR ? baseAt + (isUp ? -CLEAR : CLEAR) : tipAt
-  const colour = isUp ? UP : DOWN
+  const [upTint, downTint] = closed === undefined ? [UP, DOWN] : [QUIET, QUIET]
+  const colour = isUp ? upTint : downTint
   // One copy of the line and wash per side of the base, each cut to its side, so the color changes where the
   // line crosses the base.
   const side = (id: string, tint: string) =>
     `<g clip-path="url(#${id})">` +
     `<path d="${wash}" fill="url(#${id}-wash)"/>` +
     `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity=".04" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
-    `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity=".22" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></g>`
+    `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity="${closed === undefined ? 0.22 : 0.45}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></g>`
 
   return (
     PAGE +
@@ -114,13 +116,14 @@ export function chartSvg(quote: Quote | undefined): string {
     `<svg width="100%" height="100%" viewBox="0 0 ${BOX} ${BOX}" preserveAspectRatio="none"><defs>` +
     `<clipPath id="up"><rect x="-10" y="-10" width="${BOX + 20}" height="${(baseAt + 10).toFixed(1)}"/></clipPath>` +
     `<clipPath id="down"><rect x="-10" y="${baseAt.toFixed(1)}" width="${BOX + 20}" height="${BOX}"/></clipPath>` +
-    `<linearGradient id="up-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${UP}" stop-opacity=".16"/><stop offset="1" stop-color="${UP}" stop-opacity="0"/></linearGradient>` +
-    `<linearGradient id="down-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.bottom}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${DOWN}" stop-opacity=".16"/><stop offset="1" stop-color="${DOWN}" stop-opacity="0"/></linearGradient>` +
-    `</defs>${side('up', UP)}${side('down', DOWN)}</svg>` +
+    `<linearGradient id="up-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${upTint}" stop-opacity=".16"/><stop offset="1" stop-color="${upTint}" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="down-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.bottom}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${downTint}" stop-opacity=".16"/><stop offset="1" stop-color="${downTint}" stop-opacity="0"/></linearGradient>` +
+    `</defs>${side('up', upTint)}${side('down', downTint)}</svg>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="5" fill="${colour}" fill-opacity=".12"/>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="2" fill="${colour}" fill-opacity=".7"/>` +
     `<text x="99%" y="${share(baseAt)}" dy="-8" text-anchor="end" ${LETTERS} font-size="10" fill="${QUIET}">${quote.baseLabel} ${quote.base.toFixed(2)}</text>` +
     `<text x="${share(LINE.right + 10)}" y="${share(priceAt)}" dy="5" ${LETTERS} font-size="13" fill="${colour}" fill-opacity=".75">${quote.symbol} ${quote.price.toFixed(2)}</text>` +
+    (closed === undefined ? '' : `<text x="99%" y="${share(LINE.bottom + 50)}" text-anchor="end" ${LETTERS} font-size="10" fill="${QUIET}">${closed}</text>`) +
     '</svg>'
   )
 }

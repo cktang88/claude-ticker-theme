@@ -114,8 +114,8 @@ export function readWeek(text: string): Week | undefined {
   return symbol === undefined || days.size === 0 ? undefined : { symbol, days: [...days.values()] }
 }
 
-/** When trading starts again, as a short note such as "opens Mon 4:00 am". */
-export function opensNote(now: number): string {
+/** About when trading starts again: the first whole hour from now that is in trading hours. */
+export function nextOpen(now: number): number {
   const hour = 60 * 60 * 1000
   let at = now
 
@@ -123,7 +123,12 @@ export function opensNote(now: number): string {
     at += hour
   }
 
-  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short' }).format(at)
+  return at
+}
+
+/** When trading starts again, as a short note such as "closed · opens Mon 4:00 am". */
+export function opensNote(now: number): string {
+  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', weekday: 'short' }).format(nextOpen(now))
 
   return `closed · opens ${weekday} 4:00 am`
 }

@@ -8,7 +8,7 @@ A white page with one stock's day drawn as a single soft line, **updating live e
 
 ## Live updates
 
-Every 10 seconds from 4 am to 8 pm New York time on weekdays (pre-market, the regular session and after-hours), the theme fetches the latest price. Outside those hours it stops asking and shows the last five trading days instead, as one faint gray line with a mark between days and a small note saying when trading opens again. The end of the line and the number move with it, and a new point joins the line each minute. When the price has not changed, nothing is redrawn.
+Every 10 seconds from 4 am to 8 pm New York time on weekdays (pre-market, the regular session and after-hours), the theme fetches the latest price. Outside those hours it stops asking. On a weeknight the day's chart stays, grayed out, with a small note saying when trading opens again. On a weekend it shows the last five trading days instead, as one faint gray line with a mark between days. The end of the line and the number move with it, and a new point joins the line each minute. When the price has not changed, nothing is redrawn.
 
 ![The closed-market view: five trading days as one faint gray line](docs/weekend.png)
 

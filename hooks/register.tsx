@@ -6,7 +6,7 @@ import type { EngineInterface, Register, ThemeSetArgs } from 'claude-code'
 
 import { chartSvg, weekSvg } from './chart'
 import { makeColors } from './make-colors.js'
-import { isFresh, isTradingHours, opensNote, quoteAddress, readQuote, readWeek, weekAddress } from './quote'
+import { isFresh, isTradingHours, nextOpen, opensNote, quoteAddress, readQuote, readWeek, weekAddress } from './quote'
 import type { Quote, Week } from './quote'
 
 // TODO(kwuang): let the person choose the stock when more than this one is wanted.
@@ -15,6 +15,7 @@ const EVERY_MS = 10_000
 /** The store key every session of this theme reads and writes. The store is shared by all sessions on the machine. */
 const SAVED = 'latest-quote'
 const SAVED_WEEK = 'latest-week'
+const NIGHT_MS = 12 * 60 * 60 * 1000
 /** While the market is closed, sessions share one fetch of the week for this long. */
 const WEEK_MAX_AGE_MS = 6 * 60 * 60 * 1000
 const COMMAND = 'ticker'
@@ -49,15 +50,15 @@ const LOOK = {
  * kept here and the picture is built once per quote.
  */
 let latest: Quote | undefined
-/** While the market is closed: the week to draw, and when trading opens again. */
-let closed: { week: Week; note: string } | undefined
+/** While the market is closed: when trading opens again, and on weekends the week to draw instead of the day. */
+let closed: { note: string; week?: Week } | undefined
 let built: { from: Quote | typeof closed; source: string } | undefined
 
 function backdropSource(): string {
   const from = closed ?? latest
 
   if (built === undefined || built.from !== from) {
-    built = { from, source: closed === undefined ? chartSvg(latest) : weekSvg(closed.week, closed.note) }
+    built = { from, source: closed?.week === undefined ? chartSvg(latest, closed?.note) : weekSvg(closed.week, closed.note) }
   }
 
   return built.source
@@ -106,12 +107,21 @@ async function refresh($: EngineInterface): Promise<void> {
 
   if (!isTradingHours(now)) {
     if (closed === undefined) {
-      const week = await latestWeek($, now)
+      const note = opensNote(now)
 
-      if (week !== undefined) {
-        closed = { week, note: opensNote(now) }
-        $.ui.invalidate('ui.render')
+      // A weeknight keeps the day, in gray. A longer close, such as a weekend, shows the week.
+      if (nextOpen(now) - now > NIGHT_MS) {
+        const week = await latestWeek($, now)
+
+        if (week === undefined) {
+          return
+        }
+        closed = { note, week }
+      } else {
+        latest ??= await latestQuote($)
+        closed = { note }
       }
+      $.ui.invalidate('ui.render')
     }
 
     return

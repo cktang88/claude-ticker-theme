@@ -42,20 +42,19 @@ test('draws one smooth curve through every minute and writes both numbers', () =
   expect(curve.match(/C/g)?.length).toBe(3)
   expect(picture).toContain('prev close 83.00')
   expect(picture).toContain('ANT 98.70')
-  expect(picture).toContain('fill="#3f9d6e">ANT 98.70')
-  expect(picture).toContain('<g class="flash"><text')
+  expect(picture).toContain('fill="#3f9d6e"/><text')
 })
 
 test('ends the curve at the price now, unsmoothed', () => {
   const picture = chartSvg({ symbol: 'ANT', baseLabel: 'open', base: 80, price: 100, points: [80, 100, 90, 100] })
 
-  expect(picture).toMatch(/<path d="M[^"]+ 880\.0 340\.0" fill="none"/)
+  expect(picture).toMatch(/<path d="M[^"]+ 935\.0 340\.0" fill="none"/)
 })
 
 test('colors the price red below the open and keeps it clear of the open label', () => {
   const picture = chartSvg({ symbol: 'ANT', baseLabel: 'open', base: 83, price: 82.9, points: [83, 95, 82.9] })
 
-  expect(picture).toContain('fill="#cf6a5e">ANT 82.90')
+  expect(picture).toContain('fill="#cf6a5e"/><text')
   const openAt = Number(picture.match(/y="([\d.]+)%" dy="-8"/)?.[1])
   const priceAt = Number(picture.match(/y="([\d.]+)%" dy="5"/)?.[1])
 

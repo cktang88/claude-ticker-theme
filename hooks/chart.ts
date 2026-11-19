@@ -77,11 +77,11 @@ export function chartSvg(quote: Quote | undefined): string {
     `<svg width="100%" height="100%" viewBox="0 0 ${BOX} ${BOX}" preserveAspectRatio="none"><defs>` +
     `<clipPath id="up"><rect x="-10" y="-10" width="${BOX + 20}" height="${(baseAt + 10).toFixed(1)}"/></clipPath>` +
     `<clipPath id="down"><rect x="-10" y="${baseAt.toFixed(1)}" width="${BOX + 20}" height="${BOX}"/></clipPath>` +
-    `<linearGradient id="up-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${UP}" stop-opacity=".06"/><stop offset="1" stop-color="${UP}" stop-opacity="0"/></linearGradient>` +
-    `<linearGradient id="down-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.bottom}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${DOWN}" stop-opacity=".06"/><stop offset="1" stop-color="${DOWN}" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="up-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${UP}" stop-opacity=".16"/><stop offset="1" stop-color="${UP}" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="down-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.bottom}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${DOWN}" stop-opacity=".16"/><stop offset="1" stop-color="${DOWN}" stop-opacity="0"/></linearGradient>` +
     `</defs>${side('up', UP)}${side('down', DOWN)}</svg>` +
-    `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="9" fill="${colour}" fill-opacity=".08"/>` +
-    `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="3.5" fill="${colour}" fill-opacity=".5"/>` +
+    `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="9" fill="${colour}" fill-opacity=".15"/>` +
+    `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="3.5" fill="${colour}"/>` +
     `<text x="99%" y="${share(baseAt)}" dy="-8" text-anchor="end" ${LETTERS} font-size="10" fill="${QUIET}">${quote.baseLabel} ${quote.base.toFixed(2)}</text>` +
     `<text x="${share(LINE.right + 10)}" y="${share(priceAt)}" dy="5" ${LETTERS} font-size="13" fill="${colour}" fill-opacity=".75">${quote.symbol} ${quote.price.toFixed(2)}</text>` +
     '</svg>'

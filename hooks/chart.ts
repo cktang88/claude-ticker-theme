@@ -82,8 +82,8 @@ export function chartSvg(quote: Quote | undefined): string {
     `</defs>${side('up', UP)}${side('down', DOWN)}</svg>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="9" fill="${colour}" fill-opacity=".15"/>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="3.5" fill="${colour}"/>` +
-    `<text x="99%" y="${share(baseAt)}" dy="-8" text-anchor="end" ${LETTERS} font-size="11" fill="${QUIET}">${quote.baseLabel} ${quote.base.toFixed(2)}</text>` +
-    `<text x="${share(LINE.right + 10)}" y="${share(priceAt)}" dy="5" ${LETTERS} font-size="13" fill="${colour}" fill-opacity=".75">${quote.symbol} ${quote.price.toFixed(2)}</text>` +
+    `<text x="99%" y="${share(baseAt)}" dy="-8" text-anchor="end" ${LETTERS} font-size="10" fill="${QUIET}">${quote.baseLabel} ${quote.base.toFixed(2)}</text>` +
+    `<text x="${share(LINE.right + 10)}" y="${share(priceAt)}" dy="5" ${LETTERS} font-size="11" fill="${colour}" fill-opacity=".75">${quote.symbol} ${quote.price.toFixed(2)}</text>` +
     '</svg>'
   )
 }

@@ -1,11 +1,12 @@
 // Ticker theme: a white page with one stock's day drawn as a single soft line, yesterday's close (or today's open
-// when there is none) and the price now. The price is fetched again every ten seconds, and the picture is drawn again only when it changed.
+// when there is none) and the price now. The price is fetched again every ten seconds from 4 am to 8 pm New York
+// time, and the picture is drawn again only when it changed.
 
 import type { EngineInterface, Register, ThemeSetArgs } from 'claude-code'
 
 import { chartSvg } from './chart'
 import { makeColors } from './make-colors.js'
-import { isFresh, quoteAddress, readQuote } from './quote'
+import { isFresh, isTradingHours, quoteAddress, readQuote } from './quote'
 import type { Quote } from './quote'
 
 // TODO(kwuang): let the person choose the stock when more than this one is wanted.
@@ -64,6 +65,11 @@ async function latestQuote($: EngineInterface): Promise<Quote | undefined> {
     return saved.quote
   }
 
+  // Outside trading hours the price cannot move, so a saved one of any age will do.
+  if (!isTradingHours(now) && isFresh(saved, SYMBOL, now, Infinity)) {
+    return saved.quote
+  }
+
   const answer = await $.http.fetch(quoteAddress(SYMBOL), { headers: { 'user-agent': 'Mozilla/5.0' } })
   const fetched = answer.ok ? readQuote(answer.text) : undefined
 
@@ -76,6 +82,10 @@ async function latestQuote($: EngineInterface): Promise<Quote | undefined> {
 
 /** Asks for a new picture when the price moved. A failed fetch keeps the last picture. */
 async function refresh($: EngineInterface): Promise<void> {
+  if (latest !== undefined && !isTradingHours(await $.clock.now())) {
+    return
+  }
+
   const fresh = await latestQuote($)
 
   if (fresh === undefined || (fresh.price === latest?.price && fresh.points.length === latest.points.length)) {

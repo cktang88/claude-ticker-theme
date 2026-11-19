@@ -1,5 +1,5 @@
-// Ticker theme: a white page with one stock's day drawn as a single jagged line, the day's opening price and the
-// price now. The price is fetched again every ten seconds, and the picture is drawn again only when it changed.
+// Ticker theme: a white page with one stock's day drawn as a single soft line, yesterday's close (or today's open
+// when there is none) and the price now. The price is fetched again every ten seconds, and the picture is drawn again only when it changed.
 
 import type { EngineInterface, Register, ThemeSetArgs } from 'claude-code'
 
@@ -117,6 +117,6 @@ export const register: Register = on => {
 
     const { Svg } = $.ui.resolve(e)
 
-    return <Svg alt={`A white page with the day's price of ${SYMBOL} as one jagged line, the opening price and the price now`} source={backdropSource()} />
+    return <Svg alt={`A white page with the day's price of ${SYMBOL} as one soft line, yesterday's close and the price now`} source={backdropSource()} />
   })
 }

@@ -3,16 +3,26 @@ import { expect, test } from 'bun:test'
 import { chartSvg } from '../hooks/chart'
 import { quoteAddress, readQuote } from '../hooks/quote'
 
-const answer = (close: (number | null)[], price: number) =>
+const answer = (minutes: (number | null)[], price: number, close: { chartPreviousClose?: number } = {}) =>
   JSON.stringify({
     chart: {
-      result: [{ meta: { symbol: 'ANT', regularMarketPrice: price }, indicators: { quote: [{ open: [null, 83, 84.1], close }] } }],
+      result: [{ meta: { symbol: 'ANT', regularMarketPrice: price, ...close }, indicators: { quote: [{ open: [null, 83, 84.1], close: minutes }] } }],
       error: null,
     },
   })
 
-test('reads the open, the price now and the minutes in order, skipping empty minutes', () => {
-  expect(readQuote(answer([null, 83.5, 90.25, null, 97.1], 98.695))).toEqual({ symbol: 'ANT', open: 83, price: 98.695, points: [83.5, 90.25, 97.1, 98.695] })
+test('measures against yesterday close, and reads the price now and the minutes in order', () => {
+  expect(readQuote(answer([null, 83.5, 90.25, null, 97.1], 98.695, { chartPreviousClose: 81.2 }))).toEqual({
+    symbol: 'ANT',
+    base: 81.2,
+    baseLabel: 'prev close',
+    price: 98.695,
+    points: [83.5, 90.25, 97.1, 98.695],
+  })
+})
+
+test('measures against today first price when there is no close yet', () => {
+  expect(readQuote(answer([83.5], 84))).toMatchObject({ base: 83, baseLabel: 'open' })
 })
 
 test('gives nothing for an answer with no prices or one that is not a chart', () => {
@@ -26,23 +36,23 @@ test('asks for one day in one-minute steps', () => {
 })
 
 test('draws one smooth curve through every minute and writes both numbers', () => {
-  const picture = chartSvg({ symbol: 'ANT', open: 83, price: 98.7, points: [83.5, 90.25, 97.1, 98.7] })
+  const picture = chartSvg({ symbol: 'ANT', baseLabel: 'prev close', base: 83, price: 98.7, points: [83.5, 90.25, 97.1, 98.7] })
   const curve = picture.match(/<path d="(M[^"]+)" fill="none"/)?.[1] ?? ''
 
   expect(curve.match(/C/g)?.length).toBe(3)
-  expect(picture).toContain('open 83.00')
+  expect(picture).toContain('prev close 83.00')
   expect(picture).toContain('ANT 98.70')
   expect(picture).toContain('fill="#3f9d6e"/><text')
 })
 
 test('ends the curve at the price now, unsmoothed', () => {
-  const picture = chartSvg({ symbol: 'ANT', open: 80, price: 100, points: [80, 100, 90, 100] })
+  const picture = chartSvg({ symbol: 'ANT', baseLabel: 'open', base: 80, price: 100, points: [80, 100, 90, 100] })
 
   expect(picture).toMatch(/<path d="M[^"]+ 880\.0 340\.0" fill="none"/)
 })
 
 test('colors the price red below the open and keeps it clear of the open label', () => {
-  const picture = chartSvg({ symbol: 'ANT', open: 83, price: 82.9, points: [83, 95, 82.9] })
+  const picture = chartSvg({ symbol: 'ANT', baseLabel: 'open', base: 83, price: 82.9, points: [83, 95, 82.9] })
 
   expect(picture).toContain('fill="#cf6a5e"/><text')
   const openAt = Number(picture.match(/y="([\d.]+)%" dy="-8"/)?.[1])

@@ -1,6 +1,7 @@
-// The picture: a white page, the day's price as one soft, smooth line (green above the open, red below) with a
-// faint wash between it and the open, a dotted line at the open, and two numbers at the right (the open and the
-// price now). The line is drawn in a 1000-unit box stretched to the window; its stroke keeps its width.
+// The picture: a white page, the day's price as one soft, smooth line with a faint wash, measured against a base
+// (yesterday's close, or today's open when there is none): green above the base, red below. A dotted line marks
+// the base, and two numbers sit at the right (the base and the price now). The line is drawn in a 1000-unit box
+// stretched to the window; its stroke keeps its width.
 
 import type { Quote } from './quote'
 
@@ -49,21 +50,21 @@ export function chartSvg(quote: Quote | undefined): string {
   }
 
   const points = eased(quote.points)
-  const low = Math.min(quote.open, ...points)
-  const high = Math.max(quote.open, ...points)
+  const low = Math.min(quote.base, ...points)
+  const high = Math.max(quote.base, ...points)
   const span = high - low || 1
   const down = (price: number) => LINE.bottom - ((price - low) / span) * (LINE.bottom - LINE.top)
   const across = (index: number) => LINE.left + (index / Math.max(1, points.length - 1)) * (LINE.right - LINE.left)
   const line = smoothPath(points.map((price, index) => [across(index), down(price)] as const))
-  const openAt = down(quote.open)
+  const baseAt = down(quote.base)
   const tipAt = down(quote.price)
-  const isUp = quote.price >= quote.open
-  const wash = `${line}L${LINE.right} ${openAt.toFixed(1)}L${LINE.left} ${openAt.toFixed(1)}Z`
-  // The price is written beside the line's end. When that is too near the open's label, it moves away from it.
-  const priceAt = Math.abs(tipAt - openAt) < CLEAR ? openAt + (isUp ? -CLEAR : CLEAR) : tipAt
+  const isUp = quote.price >= quote.base
+  const wash = `${line}L${LINE.right} ${baseAt.toFixed(1)}L${LINE.left} ${baseAt.toFixed(1)}Z`
+  // The price is written beside the line's end. When that is too near the base's label, it moves away from it.
+  const priceAt = Math.abs(tipAt - baseAt) < CLEAR ? baseAt + (isUp ? -CLEAR : CLEAR) : tipAt
   const colour = isUp ? UP : DOWN
-  // One copy of the line and wash per side of the open, each cut to its side, so the color changes where the
-  // line crosses the open.
+  // One copy of the line and wash per side of the base, each cut to its side, so the color changes where the
+  // line crosses the base.
   const side = (id: string, tint: string) =>
     `<g clip-path="url(#${id})">` +
     `<path d="${wash}" fill="url(#${id}-wash)"/>` +
@@ -72,16 +73,16 @@ export function chartSvg(quote: Quote | undefined): string {
 
   return (
     page +
-    `<line x1="0" y1="${share(openAt)}" x2="100%" y2="${share(openAt)}" stroke="${QUIET}" stroke-width="1" stroke-dasharray="1 7" stroke-linecap="round"/>` +
+    `<line x1="0" y1="${share(baseAt)}" x2="100%" y2="${share(baseAt)}" stroke="${QUIET}" stroke-width="1" stroke-dasharray="1 7" stroke-linecap="round"/>` +
     `<svg width="100%" height="100%" viewBox="0 0 ${BOX} ${BOX}" preserveAspectRatio="none"><defs>` +
-    `<clipPath id="up"><rect x="-10" y="-10" width="${BOX + 20}" height="${(openAt + 10).toFixed(1)}"/></clipPath>` +
-    `<clipPath id="down"><rect x="-10" y="${openAt.toFixed(1)}" width="${BOX + 20}" height="${BOX}"/></clipPath>` +
-    `<linearGradient id="up-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${openAt.toFixed(1)}"><stop offset="0" stop-color="${UP}" stop-opacity=".16"/><stop offset="1" stop-color="${UP}" stop-opacity="0"/></linearGradient>` +
-    `<linearGradient id="down-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.bottom}" x2="0" y2="${openAt.toFixed(1)}"><stop offset="0" stop-color="${DOWN}" stop-opacity=".16"/><stop offset="1" stop-color="${DOWN}" stop-opacity="0"/></linearGradient>` +
+    `<clipPath id="up"><rect x="-10" y="-10" width="${BOX + 20}" height="${(baseAt + 10).toFixed(1)}"/></clipPath>` +
+    `<clipPath id="down"><rect x="-10" y="${baseAt.toFixed(1)}" width="${BOX + 20}" height="${BOX}"/></clipPath>` +
+    `<linearGradient id="up-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${UP}" stop-opacity=".16"/><stop offset="1" stop-color="${UP}" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="down-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.bottom}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${DOWN}" stop-opacity=".16"/><stop offset="1" stop-color="${DOWN}" stop-opacity="0"/></linearGradient>` +
     `</defs>${side('up', UP)}${side('down', DOWN)}</svg>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="9" fill="${colour}" fill-opacity=".15"/>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="3.5" fill="${colour}"/>` +
-    `<text x="99%" y="${share(openAt)}" dy="-8" text-anchor="end" ${LETTERS} font-size="12" fill="${QUIET}">open ${quote.open.toFixed(2)}</text>` +
+    `<text x="99%" y="${share(baseAt)}" dy="-8" text-anchor="end" ${LETTERS} font-size="12" fill="${QUIET}">${quote.baseLabel} ${quote.base.toFixed(2)}</text>` +
     `<text x="${share(LINE.right + 14)}" y="${share(priceAt)}" dy="5" ${LETTERS} font-size="15" font-weight="500" fill="${colour}">${quote.symbol} ${quote.price.toFixed(2)}</text>` +
     '</svg>'
   )

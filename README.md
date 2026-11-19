@@ -1,20 +1,26 @@
 # Ticker theme for the Claude desktop app
 
-A white page with one stock's day drawn as a single soft line. Nothing else, except two numbers at the right: what it opened at today, and the price now.
+A white page with one stock's day drawn as a single soft line, **updating live every 10 seconds**. Nothing else, except two numbers at the right: yesterday's close, and the price now.
 
-![a white page with one soft green price line, a dotted line at the opening price, and the price now at the line's end](docs/preview.png)
+![a white page with one soft green price line that updates as the price moves, a dotted line at yesterday's close, and the price now at the line's end](docs/preview.gif)
+
+*The preview is real ANT prices recorded 10 seconds apart, played 5 times faster.*
+
+## Live updates
+
+Every 10 seconds the theme fetches the latest price. The end of the line and the number move with it, and a new point joins the line each minute. When the price has not changed, nothing is redrawn.
 
 ## What it shows
 
-- **The line:** the day's price from the open at the left to now at the right, smoothed so it flows instead of jitters, light and a little thick, green where the price is at or above the open and red below it, with a faint wash between it and the open.
-- **The dotted line:** the day's opening price, with `open 83.00` at its right end.
-- **The number at the line's end:** the price now. Green when it is at or above the open, red below it.
+- **The line:** today's price from the open at the left to now at the right, smoothed so it flows instead of jitters. Green where it is at or above yesterday's close, red below it, with a faint wash between the two.
+- **The dotted line:** yesterday's close, labeled `prev close 83.00`. On a stock's first trading day there is no close yet, so it uses today's open and says `open`.
+- **The number at the line's end:** the price now, green or red the same way.
 
-The price is fetched every ten seconds from Yahoo Finance's public chart address. The picture is drawn again only when the price moved. Outside market hours it shows the last trading day and stays still.
+Prices come from Yahoo Finance's public chart address, which needs no account or key. It is not an official API: it can lag, rate-limit or stop without notice, and then the picture keeps its last price. Outside market hours it shows the last trading day and stays still.
 
 Right now the stock is fixed in the code: `ANT` (Anthropic). To watch another one, change `SYMBOL` in `hooks/register.tsx`.
 
-The numbers are for looking at, not for trading on: the feed can lag, and it can fail without notice (the picture then keeps its last price).
+The numbers are for looking at, not for trading on.
 
 ## Install
 

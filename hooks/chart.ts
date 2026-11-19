@@ -1,18 +1,45 @@
-// The picture: a white page, the day's price as one light jagged line (green above the open, red below), a dotted line at the day's opening price, and
-// two numbers at the right (the open and the price now). Every place is a share of the window, so it fits any
-// window without stretching the line's thickness.
+// The picture: a white page, the day's price as one soft, smooth line (green above the open, red below) with a
+// faint wash between it and the open, a dotted line at the open, and two numbers at the right (the open and the
+// price now). The line is drawn in a 1000-unit box stretched to the window; its stroke keeps its width.
 
 import type { Quote } from './quote'
 
-const LINE = { left: 0, right: 88, top: 34, bottom: 66 } as const
-const QUIET = '#9a9a9a'
-const UP = '#167a48'
-const DOWN = '#b3392f'
+const BOX = 1000
+const LINE = { left: 0, right: 880, top: 340, bottom: 660 } as const
+const QUIET = '#a3a3a3'
+const UP = '#3f9d6e'
+const DOWN = '#cf6a5e'
 const LETTERS = 'font-family="ui-monospace, SF Mono, Menlo, monospace"'
-/** Closer than this (in shares of the window's height), the two numbers would sit on top of each other. */
-const CLEAR = 4.5
+/** Closer than this (in thousandths of the window's height), the two numbers would sit on top of each other. */
+const CLEAR = 45
 
-const share = (value: number) => `${value.toFixed(2)}%`
+const share = (value: number) => `${(value / 10).toFixed(2)}%`
+
+/** Evens out minute-to-minute jitter: each point becomes the average of itself and its neighbours. */
+function eased(points: readonly number[]): number[] {
+  return points.map((_, index) => {
+    const near = points.slice(Math.max(0, index - 2), index + 3)
+
+    return index === points.length - 1 ? points[index]! : near.reduce((sum, value) => sum + value, 0) / near.length
+  })
+}
+
+/** A smooth path through the points: each stretch is a curve whose ends follow the neighbouring points. */
+function smoothPath(xy: readonly (readonly [number, number])[]): string {
+  const at = (index: number) => xy[Math.min(xy.length - 1, Math.max(0, index))]!
+  const round = (value: number) => value.toFixed(1)
+  let path = `M${round(xy[0]![0])} ${round(xy[0]![1])}`
+
+  for (let index = 1; index < xy.length; index += 1) {
+    const [before, from, to, after] = [at(index - 2), at(index - 1), at(index), at(index + 1)]
+    const first = [from[0] + (to[0] - before[0]) / 6, from[1] + (to[1] - before[1]) / 6]
+    const second = [to[0] - (after[0] - from[0]) / 6, to[1] - (after[1] - from[1]) / 6]
+
+    path += `C${round(first[0]!)} ${round(first[1]!)} ${round(second[0]!)} ${round(second[1]!)} ${round(to[0])} ${round(to[1])}`
+  }
+
+  return path
+}
 
 export function chartSvg(quote: Quote | undefined): string {
   const page = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="#fff"/>'
@@ -21,35 +48,41 @@ export function chartSvg(quote: Quote | undefined): string {
     return `${page}</svg>`
   }
 
-  const low = Math.min(quote.open, ...quote.points)
-  const high = Math.max(quote.open, ...quote.points)
+  const points = eased(quote.points)
+  const low = Math.min(quote.open, ...points)
+  const high = Math.max(quote.open, ...points)
   const span = high - low || 1
   const down = (price: number) => LINE.bottom - ((price - low) / span) * (LINE.bottom - LINE.top)
-  const across = (index: number) => LINE.left + (index / Math.max(1, quote.points.length - 1)) * (LINE.right - LINE.left)
-  let line = ''
-
-  // Each piece is green while the price is at or above the open and red below it, judged at the piece's middle.
-  for (let index = 1; index < quote.points.length; index += 1) {
-    const middle = (quote.points[index - 1]! + quote.points[index]!) / 2
-
-    line += `<line x1="${share(across(index - 1))}" y1="${share(down(quote.points[index - 1]!))}" x2="${share(across(index))}" y2="${share(down(quote.points[index]!))}" stroke="${middle >= quote.open ? UP : DOWN}"/>`
-  }
-
+  const across = (index: number) => LINE.left + (index / Math.max(1, points.length - 1)) * (LINE.right - LINE.left)
+  const line = smoothPath(points.map((price, index) => [across(index), down(price)] as const))
   const openAt = down(quote.open)
   const tipAt = down(quote.price)
   const isUp = quote.price >= quote.open
+  const wash = `${line}L${LINE.right} ${openAt.toFixed(1)}L${LINE.left} ${openAt.toFixed(1)}Z`
   // The price is written beside the line's end. When that is too near the open's label, it moves away from it.
-  const gap = tipAt - openAt
-  const priceAt = Math.abs(gap) < CLEAR ? openAt + (isUp ? -CLEAR : CLEAR) : tipAt
+  const priceAt = Math.abs(tipAt - openAt) < CLEAR ? openAt + (isUp ? -CLEAR : CLEAR) : tipAt
   const colour = isUp ? UP : DOWN
+  // One copy of the line and wash per side of the open, each cut to its side, so the color changes where the
+  // line crosses the open.
+  const side = (id: string, tint: string) =>
+    `<g clip-path="url(#${id})">` +
+    `<path d="${wash}" fill="url(#${id}-wash)"/>` +
+    `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity=".12" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
+    `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity=".6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></g>`
 
   return (
     page +
     `<line x1="0" y1="${share(openAt)}" x2="100%" y2="${share(openAt)}" stroke="${QUIET}" stroke-width="1" stroke-dasharray="1 7" stroke-linecap="round"/>` +
-    `<g stroke-opacity=".45" stroke-width="1.5" stroke-linecap="round">${line}</g>` +
-    `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="3" fill="${colour}"/>` +
-    `<text x="99%" y="${share(openAt)}" dy="-7" text-anchor="end" ${LETTERS} font-size="12" fill="${QUIET}">open ${quote.open.toFixed(2)}</text>` +
-    `<text x="${share(LINE.right + 1.2)}" y="${share(priceAt)}" dy="5" ${LETTERS} font-size="15" font-weight="600" fill="${colour}">${quote.symbol} ${quote.price.toFixed(2)}</text>` +
+    `<svg width="100%" height="100%" viewBox="0 0 ${BOX} ${BOX}" preserveAspectRatio="none"><defs>` +
+    `<clipPath id="up"><rect x="-10" y="-10" width="${BOX + 20}" height="${(openAt + 10).toFixed(1)}"/></clipPath>` +
+    `<clipPath id="down"><rect x="-10" y="${openAt.toFixed(1)}" width="${BOX + 20}" height="${BOX}"/></clipPath>` +
+    `<linearGradient id="up-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${openAt.toFixed(1)}"><stop offset="0" stop-color="${UP}" stop-opacity=".16"/><stop offset="1" stop-color="${UP}" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="down-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.bottom}" x2="0" y2="${openAt.toFixed(1)}"><stop offset="0" stop-color="${DOWN}" stop-opacity=".16"/><stop offset="1" stop-color="${DOWN}" stop-opacity="0"/></linearGradient>` +
+    `</defs>${side('up', UP)}${side('down', DOWN)}</svg>` +
+    `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="9" fill="${colour}" fill-opacity=".15"/>` +
+    `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="3.5" fill="${colour}"/>` +
+    `<text x="99%" y="${share(openAt)}" dy="-8" text-anchor="end" ${LETTERS} font-size="12" fill="${QUIET}">open ${quote.open.toFixed(2)}</text>` +
+    `<text x="${share(LINE.right + 14)}" y="${share(priceAt)}" dy="5" ${LETTERS} font-size="15" font-weight="500" fill="${colour}">${quote.symbol} ${quote.price.toFixed(2)}</text>` +
     '</svg>'
   )
 }

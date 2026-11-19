@@ -1,12 +1,12 @@
 # Ticker theme for the Claude desktop app
 
-A white page with one stock's day drawn as a single jagged line. Nothing else, except two numbers at the right: what it opened at today, and the price now.
+A white page with one stock's day drawn as a single soft line. Nothing else, except two numbers at the right: what it opened at today, and the price now.
 
-![a white page with one thin jagged price line, a dotted line at the opening price, and the price now at the line's end](docs/preview.png)
+![a white page with one soft green price line, a dotted line at the opening price, and the price now at the line's end](docs/preview.png)
 
 ## What it shows
 
-- **The line:** the day's price, one point a minute, from the open at the left to now at the right. It is drawn light, green where the price is at or above the open and red where it is below.
+- **The line:** the day's price from the open at the left to now at the right, smoothed so it flows instead of jitters, light and a little thick, green where the price is at or above the open and red below it, with a faint wash between it and the open.
 - **The dotted line:** the day's opening price, with `open 83.00` at its right end.
 - **The number at the line's end:** the price now. Green when it is at or above the open, red below it.
 

@@ -1,11 +1,10 @@
-// The picture: a white page, the day's price as one jagged line, a dotted line at the day's opening price, and
+// The picture: a white page, the day's price as one light jagged line (green above the open, red below), a dotted line at the day's opening price, and
 // two numbers at the right (the open and the price now). Every place is a share of the window, so it fits any
 // window without stretching the line's thickness.
 
 import type { Quote } from './quote'
 
 const LINE = { left: 0, right: 88, top: 34, bottom: 66 } as const
-const INK = '#1a1a1a'
 const QUIET = '#9a9a9a'
 const UP = '#167a48'
 const DOWN = '#b3392f'
@@ -29,8 +28,11 @@ export function chartSvg(quote: Quote | undefined): string {
   const across = (index: number) => LINE.left + (index / Math.max(1, quote.points.length - 1)) * (LINE.right - LINE.left)
   let line = ''
 
+  // Each piece is green while the price is at or above the open and red below it, judged at the piece's middle.
   for (let index = 1; index < quote.points.length; index += 1) {
-    line += `<line x1="${share(across(index - 1))}" y1="${share(down(quote.points[index - 1]!))}" x2="${share(across(index))}" y2="${share(down(quote.points[index]!))}"/>`
+    const middle = (quote.points[index - 1]! + quote.points[index]!) / 2
+
+    line += `<line x1="${share(across(index - 1))}" y1="${share(down(quote.points[index - 1]!))}" x2="${share(across(index))}" y2="${share(down(quote.points[index]!))}" stroke="${middle >= quote.open ? UP : DOWN}"/>`
   }
 
   const openAt = down(quote.open)
@@ -44,7 +46,7 @@ export function chartSvg(quote: Quote | undefined): string {
   return (
     page +
     `<line x1="0" y1="${share(openAt)}" x2="100%" y2="${share(openAt)}" stroke="${QUIET}" stroke-width="1" stroke-dasharray="1 7" stroke-linecap="round"/>` +
-    `<g stroke="${INK}" stroke-width="1.5" stroke-linecap="round">${line}</g>` +
+    `<g stroke-opacity=".45" stroke-width="1.5" stroke-linecap="round">${line}</g>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="3" fill="${colour}"/>` +
     `<text x="99%" y="${share(openAt)}" dy="-7" text-anchor="end" ${LETTERS} font-size="12" fill="${QUIET}">open ${quote.open.toFixed(2)}</text>` +
     `<text x="${share(LINE.right + 1.2)}" y="${share(priceAt)}" dy="5" ${LETTERS} font-size="15" font-weight="600" fill="${colour}">${quote.symbol} ${quote.price.toFixed(2)}</text>` +

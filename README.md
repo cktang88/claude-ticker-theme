@@ -6,7 +6,7 @@ A white page with one stock's day drawn as a single jagged line. Nothing else, e
 
 ## What it shows
 
-- **The line:** the day's price, one point a minute, from the open at the left to now at the right.
+- **The line:** the day's price, one point a minute, from the open at the left to now at the right. It is drawn light, green where the price is at or above the open and red where it is below.
 - **The dotted line:** the day's opening price, with `open 83.00` at its right end.
 - **The number at the line's end:** the price now. Green when it is at or above the open, red below it.
 

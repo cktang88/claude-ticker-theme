@@ -37,10 +37,17 @@ test('draws one line piece per minute and writes both numbers', () => {
 test('colors the price red below the open and keeps it clear of the open label', () => {
   const picture = chartSvg({ symbol: 'ANT', open: 83, price: 82.9, points: [83, 84, 82.9] })
 
+  // The first piece rises above the open (green), the second ends below it but its middle is above (green too).
+  expect(picture.match(/stroke="#167a48"\/>/g)?.length).toBe(2)
+
   expect(picture).toContain('#b3392f')
   // The open sits at 63.09% and the price's own place (66%) is under 4.5 away, so the price is written 4.5 below the open.
   expect(picture).toMatch(/y="63\.09%" dy="-7"[^>]*>open 83\.00/)
   expect(picture).toMatch(/y="67\.59%" dy="5"[^>]*>ANT 82\.90/)
+})
+
+test('colors a piece below the open red', () => {
+  expect(chartSvg({ symbol: 'ANT', open: 83, price: 81, points: [82, 81] })).toContain('stroke="#b3392f"/>')
 })
 
 test('draws an empty white page before the first price arrives', () => {

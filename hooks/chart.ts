@@ -1,7 +1,7 @@
 // The picture: a white page, the day's price as one soft, smooth line with a faint wash, measured against a base
 // (yesterday's close, or today's open when there is none): green above the base, red below. A dotted line marks
 // the base, and two numbers sit at the right (the base and the price now). The line is drawn in a 1000-unit box
-// stretched to the window; its stroke keeps its width.
+// stretched to the window. The numbers show for 2 seconds of every 10, then fade.
 
 import type { Quote } from './quote'
 
@@ -13,6 +13,12 @@ const DOWN = '#cf6a5e'
 const LETTERS = 'font-family="ui-monospace, SF Mono, Menlo, monospace"'
 /** Closer than this (in thousandths of the window's height), the two numbers would sit on top of each other. */
 const CLEAR = 45
+
+/** The numbers show for 2 seconds of every 10 and then fade out over 3. Under Reduce Motion they stay. */
+const FLASH =
+  '.flash{animation:flash 10s linear infinite}' +
+  '@keyframes flash{0%,20%{opacity:1}50%,100%{opacity:0}}' +
+  '@media (prefers-reduced-motion:reduce){.flash{animation:none}}'
 
 const share = (value: number) => `${(value / 10).toFixed(2)}%`
 
@@ -68,11 +74,12 @@ export function chartSvg(quote: Quote | undefined): string {
   const side = (id: string, tint: string) =>
     `<g clip-path="url(#${id})">` +
     `<path d="${wash}" fill="url(#${id}-wash)"/>` +
-    `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity=".12" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
-    `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity=".6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></g>`
+    `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity=".12" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity=".6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>`
 
   return (
     page +
+    `<style>${FLASH}</style>` +
     `<line x1="0" y1="${share(baseAt)}" x2="100%" y2="${share(baseAt)}" stroke="${QUIET}" stroke-width="1" stroke-dasharray="1 7" stroke-linecap="round"/>` +
     `<svg width="100%" height="100%" viewBox="0 0 ${BOX} ${BOX}" preserveAspectRatio="none"><defs>` +
     `<clipPath id="up"><rect x="-10" y="-10" width="${BOX + 20}" height="${(baseAt + 10).toFixed(1)}"/></clipPath>` +
@@ -82,8 +89,10 @@ export function chartSvg(quote: Quote | undefined): string {
     `</defs>${side('up', UP)}${side('down', DOWN)}</svg>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="9" fill="${colour}" fill-opacity=".15"/>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="3.5" fill="${colour}"/>` +
+    '<g class="flash">' +
     `<text x="99%" y="${share(baseAt)}" dy="-8" text-anchor="end" ${LETTERS} font-size="12" fill="${QUIET}">${quote.baseLabel} ${quote.base.toFixed(2)}</text>` +
     `<text x="${share(LINE.right + 14)}" y="${share(priceAt)}" dy="5" ${LETTERS} font-size="15" font-weight="500" fill="${colour}">${quote.symbol} ${quote.price.toFixed(2)}</text>` +
+    '</g>' +
     '</svg>'
   )
 }

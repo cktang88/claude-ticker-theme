@@ -1,6 +1,6 @@
 # Ticker theme for the Claude desktop app
 
-A white page with one stock's day drawn as a single soft line, **updating live every 10 seconds**. Nothing else, except two numbers at the right: yesterday's close, and the price now.
+A white page with one stock's day drawn as a single soft line, **updating live every 10 seconds**. Nothing else, except two numbers at the right, yesterday's close and the price now, which show for 2 seconds of every 10 and then fade out.
 
 ![a white page with one soft green price line that updates as the price moves, a dotted line at yesterday's close, and the price now at the line's end](docs/preview.gif)
 

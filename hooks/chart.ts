@@ -44,7 +44,7 @@ function smoothPath(xy: readonly (readonly [number, number])[]): string {
 
 const PAGE = '<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="#fff"/>'
 
-/** The picture while the market is closed: the last five days as one faint gray line, a thin mark between days. */
+/** The picture while the market is closed: the last five days as one faint gray line with a soft wash under it, and a dotted mark between days. */
 export function weekSvg(week: Week, note: string): string {
   const all = week.days.flat()
   const low = Math.min(...all)
@@ -63,7 +63,9 @@ export function weekSvg(week: Week, note: string): string {
   return (
     PAGE +
     `<svg width="100%" height="100%" viewBox="0 0 ${BOX} ${BOX}" preserveAspectRatio="none">` +
-    `<path d="${marks}" stroke="${QUIET}" stroke-opacity=".25" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>` +
+    `<defs><linearGradient id="week-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${LINE.bottom + 30}"><stop offset="0" stop-color="${QUIET}" stop-opacity=".18"/><stop offset="1" stop-color="${QUIET}" stop-opacity="0"/></linearGradient></defs>` +
+    `<path d="${line}L${LINE.right} ${LINE.bottom + 30}L${LINE.left} ${LINE.bottom + 30}Z" fill="url(#week-wash)"/>` +
+    `<path d="${marks}" stroke="${QUIET}" stroke-opacity=".6" stroke-width="1" stroke-dasharray="3 5" vector-effect="non-scaling-stroke"/>` +
     `<path d="${line}" fill="none" stroke="${QUIET}" stroke-opacity=".45" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>` +
     `<text x="99%" y="${share(LINE.bottom + 50)}" text-anchor="end" ${LETTERS} font-size="10" fill="${QUIET}">${note}</text>` +
     '</svg>'

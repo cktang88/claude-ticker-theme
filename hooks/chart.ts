@@ -51,13 +51,22 @@ export function weekSvg(week: Week, note: string): string {
   const span = Math.max(...all) - low || 1
   const down = (price: number) => LINE.bottom - ((price - low) / span) * (LINE.bottom - LINE.top)
   const across = (index: number) => LINE.left + (index / Math.max(1, all.length - 1)) * (LINE.right - LINE.left)
-  const line = smoothPath(eased(all).map((price, index) => [across(index), down(price)] as const))
+  let line = ''
   let marks = ''
   let start = 0
 
-  for (const day of week.days.slice(0, -1)) {
+  // Each day is smoothed on its own and keeps its real open and close, and a straight stroke joins one day's close
+  // to the next day's open, so the overnight jump shows as it was.
+  for (const day of week.days) {
+    const smooth = eased(day)
+
+    smooth[0] = day[0]!
+    line += smoothPath(smooth.map((price, index) => [across(start + index), down(price)] as const)).replace(/^M/, line === '' ? 'M' : 'L')
+
+    if (start > 0) {
+      marks += `M${across(start - 0.5).toFixed(1)} ${LINE.top - 30}V${LINE.bottom + 30}`
+    }
     start += day.length
-    marks += `M${across(start - 0.5).toFixed(1)} ${LINE.top - 30}V${LINE.bottom + 30}`
   }
 
   return (

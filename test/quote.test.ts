@@ -82,14 +82,14 @@ test('trades from 4 am to 8 pm New York time on weekdays', () => {
   expect(isTradingHours(Date.parse('2026-11-21T15:00:00Z'))).toBe(false)
 })
 
-test('splits the week into days by New York date', () => {
+test('splits the week into days by New York date, each starting at its open', () => {
   const thursdayClose = Date.parse('2026-11-19T20:45:00Z') / 1000
   const fridayOpen = Date.parse('2026-11-20T14:30:00Z') / 1000
   const text = JSON.stringify({
-    chart: { result: [{ meta: { symbol: 'ANT' }, timestamp: [thursdayClose, fridayOpen, fridayOpen + 900], indicators: { quote: [{ close: [97.1, null, 95.2] }] } }] },
+    chart: { result: [{ meta: { symbol: 'ANT' }, timestamp: [thursdayClose, fridayOpen, fridayOpen + 900], indicators: { quote: [{ open: [96.8, null, 94.1], close: [97.1, null, 95.2] }] } }] },
   })
 
-  expect(readWeek(text)).toEqual({ symbol: 'ANT', days: [[97.1], [95.2]] })
+  expect(readWeek(text)).toEqual({ symbol: 'ANT', days: [[96.8, 97.1], [94.1, 95.2]] })
 })
 
 test('says when trading opens again', () => {
@@ -102,4 +102,11 @@ test('draws the week as one line with a mark between each day, and the note', ()
 
   expect(picture.match(/V\d/g)?.length).toBe(2)
   expect(picture).toContain('>closed · opens Mon 4:00 am</text>')
+})
+
+test('joins one day to the next with a straight stroke, so the overnight jump shows', () => {
+  const picture = weekSvg({ symbol: 'ANT', days: [[90, 91, 92], [99, 98, 97]] }, '')
+  const line = picture.match(/<path d="(M[^"]+)" fill="none"/)?.[1] ?? ''
+
+  expect(line.match(/L/g)?.length).toBe(1)
 })

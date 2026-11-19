@@ -74,7 +74,7 @@ export function isTradingHours(now: number): boolean {
   return weekday !== 'Sat' && weekday !== 'Sun' && hour >= 4 && hour < 20
 }
 
-/** The last five trading days of one stock, for when the market is closed: each day's prices, every 15 minutes. */
+/** The last five trading days of one stock, for when the market is closed: each day's open, then its price every 15 minutes up to the close. */
 export type Week = { symbol: string; days: number[][] }
 
 export function weekAddress(symbol: string): string {
@@ -96,16 +96,18 @@ export function readWeek(text: string): Week | undefined {
   const result = answer.chart?.result?.[0]
   const symbol = result?.meta?.symbol
   const times = result?.timestamp ?? []
+  const opens = result?.indicators?.quote?.[0]?.open ?? []
   const closes = result?.indicators?.quote?.[0]?.close ?? []
   const days = new Map<string, number[]>()
 
   times.forEach((time, index) => {
-    const close = closes[index]
+    const [open, close] = [opens[index], closes[index]]
 
     if (isPrice(close)) {
       const day = newYorkDate.format(time * 1000)
+      const before = days.get(day)
 
-      days.set(day, [...(days.get(day) ?? []), close])
+      days.set(day, before === undefined ? (isPrice(open) ? [open, close] : [close]) : [...before, close])
     }
   })
 

@@ -110,11 +110,8 @@ export const register: Register = on => {
     quietly()
     $.clock.every(EVERY_MS, quietly)
 
-    const said = await show($)
-
-    if (said !== 'The ticker theme is on.') {
-      void $.ui.toast(said)
-    }
+    // Not drawn yet is normal here: the window attaches later, and `session.attach` sets the theme again.
+    await show($)
 
     return result
   })

@@ -25,6 +25,13 @@ function eased(points: readonly number[]): number[] {
   })
 }
 
+/** At most `most` points, evenly picked, always keeping the last: the app refuses a picture over 131,072 characters. */
+function thinned(points: readonly number[], most: number): number[] {
+  const step = Math.ceil(points.length / most)
+
+  return points.filter((_, index) => index % step === 0 || index === points.length - 1)
+}
+
 /** A smooth path through the points: each stretch is a curve whose ends follow the neighbouring points. */
 function smoothPath(xy: readonly (readonly [number, number])[]): string {
   const at = (index: number) => xy[Math.min(xy.length - 1, Math.max(0, index))]!
@@ -87,7 +94,7 @@ export function chartSvg(quote: Quote | undefined, closed?: string): string {
     return `${PAGE}</svg>`
   }
 
-  const points = eased(quote.points)
+  const points = thinned(eased(quote.points), 240)
   const low = Math.min(quote.base, ...points)
   const high = Math.max(quote.base, ...points)
   const span = high - low || 1

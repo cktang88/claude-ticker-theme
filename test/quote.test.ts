@@ -124,3 +124,10 @@ test('opens again the next morning on a weeknight, and after the weekend on Frid
   expect(hours('2026-11-20T01:30:00Z')).toBeLessThan(12)
   expect(hours('2026-11-21T01:30:00Z')).toBeGreaterThan(12)
 })
+
+test('a full extended day stays under the app limit of 131,072 characters', () => {
+  const points = Array.from({ length: 960 }, (_, index) => 100 + Math.sin(index / 7) * 3 + (index % 5) * 0.37)
+  const svg = chartSvg({ symbol: 'ANT', base: 100, baseLabel: 'prev close', price: points.at(-1)!, points }, 'closed · opens Mon 4:00 am')
+
+  expect(svg.length).toBeLessThan(131_072)
+})

@@ -9,7 +9,7 @@ const BOX = 1000
 const LINE = { left: 0, right: 935, top: 340, bottom: 660 } as const
 const QUIET = '#a3a3a3'
 const UP = '#3f9d6e'
-const DOWN = '#cf6a5e'
+const DOWN = '#e8652e'
 const LETTERS = 'font-family="ui-monospace, SF Mono, Menlo, monospace"'
 /** Closer than this (in thousandths of the window's height), the two numbers would sit on top of each other. */
 const CLEAR = 45

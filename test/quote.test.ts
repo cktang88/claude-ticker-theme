@@ -54,7 +54,7 @@ test('ends the curve at the price now, unsmoothed', () => {
 test('colors the price red below the open and keeps it clear of the open label', () => {
   const picture = chartSvg({ symbol: 'ANT', baseLabel: 'open', base: 83, price: 82.9, points: [83, 95, 82.9] })
 
-  expect(picture).toContain('fill="#cf6a5e" fill-opacity=".75">ANT 82.90')
+  expect(picture).toContain('fill="#e8652e" fill-opacity=".75">ANT 82.90')
   const openAt = Number(picture.match(/y="([\d.]+)%" dy="-8"/)?.[1])
   const priceAt = Number(picture.match(/y="([\d.]+)%" dy="5"/)?.[1])
 

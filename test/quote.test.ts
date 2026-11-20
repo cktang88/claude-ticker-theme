@@ -37,7 +37,7 @@ test('asks for one day in one-minute steps, pre-market and after-hours included'
 
 test('draws one smooth curve through every minute and writes both numbers', () => {
   const picture = chartSvg({ symbol: 'ANT', baseLabel: 'prev close', base: 83, price: 98.7, points: [83.5, 90.25, 97.1, 98.7] })
-  const curve = picture.match(/<path d="(M[^"]+)" fill="none"/)?.[1] ?? ''
+  const curve = picture.match(/<path id="line" d="(M[^"]+)"/)?.[1] ?? ''
 
   expect(curve.match(/C/g)?.length).toBe(3)
   expect(picture).toContain('prev close 83.00')
@@ -48,7 +48,7 @@ test('draws one smooth curve through every minute and writes both numbers', () =
 test('ends the curve at the price now, unsmoothed', () => {
   const picture = chartSvg({ symbol: 'ANT', baseLabel: 'open', base: 80, price: 100, points: [80, 100, 90, 100] })
 
-  expect(picture).toMatch(/<path d="M[^"]+ 935\.0 340\.0" fill="none"/)
+  expect(picture).toMatch(/<path id="line" d="M[^"]+ 935\.0 340\.0"/)
 })
 
 test('colors the price red below the open and keeps it clear of the open label', () => {
@@ -130,4 +130,5 @@ test('a full extended day stays under the app limit of 131,072 characters', () =
   const svg = chartSvg({ symbol: 'ANT', base: 100, baseLabel: 'prev close', price: points.at(-1)!, points }, 'closed · opens Mon 4:00 am')
 
   expect(svg.length).toBeLessThan(131_072)
+  expect(svg.match(/ d="M/g)?.length).toBe(2)
 })

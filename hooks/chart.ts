@@ -109,18 +109,19 @@ export function chartSvg(quote: Quote | undefined, closed?: string): string {
   const priceAt = Math.abs(tipAt - baseAt) < CLEAR ? baseAt + (isUp ? -CLEAR : CLEAR) : tipAt
   const [upTint, downTint] = closed === undefined ? [UP, DOWN] : [QUIET, QUIET]
   const colour = isUp ? upTint : downTint
-  // One copy of the line and wash per side of the base, each cut to its side, so the color changes where the
-  // line crosses the base.
+  // The line and wash are written once and drawn per side of the base, each cut to its side, so the color
+  // changes where the line crosses the base.
   const side = (id: string, tint: string) =>
     `<g clip-path="url(#${id})">` +
-    `<path d="${wash}" fill="url(#${id}-wash)"/>` +
-    `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity=".04" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` +
-    `<path d="${line}" fill="none" stroke="${tint}" stroke-opacity="${closed === undefined ? 0.22 : 0.45}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></g>`
+    `<use href="#wash" fill="url(#${id}-wash)"/>` +
+    `<use href="#line" fill="none" stroke="${tint}" stroke-opacity=".04" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<use href="#line" fill="none" stroke="${tint}" stroke-opacity="${closed === undefined ? 0.22 : 0.45}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>`
 
   return (
     PAGE +
     `<line x1="0" y1="${share(baseAt)}" x2="100%" y2="${share(baseAt)}" stroke="${QUIET}" stroke-width="1" stroke-dasharray="1 7" stroke-linecap="round"/>` +
     `<svg width="100%" height="100%" viewBox="0 0 ${BOX} ${BOX}" preserveAspectRatio="none"><defs>` +
+    `<path id="line" d="${line}" vector-effect="non-scaling-stroke"/><path id="wash" d="${wash}"/>` +
     `<clipPath id="up"><rect x="-10" y="-10" width="${BOX + 20}" height="${(baseAt + 10).toFixed(1)}"/></clipPath>` +
     `<clipPath id="down"><rect x="-10" y="${baseAt.toFixed(1)}" width="${BOX + 20}" height="${BOX}"/></clipPath>` +
     `<linearGradient id="up-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${upTint}" stop-opacity=".16"/><stop offset="1" stop-color="${upTint}" stop-opacity="0"/></linearGradient>` +

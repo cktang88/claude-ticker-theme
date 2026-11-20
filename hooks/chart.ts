@@ -124,8 +124,8 @@ export function chartSvg(quote: Quote | undefined, closed?: string): string {
     `<path id="line" d="${line}" vector-effect="non-scaling-stroke"/><path id="wash" d="${wash}"/>` +
     `<clipPath id="up"><rect x="-10" y="-10" width="${BOX + 20}" height="${(baseAt + 10).toFixed(1)}"/></clipPath>` +
     `<clipPath id="down"><rect x="-10" y="${baseAt.toFixed(1)}" width="${BOX + 20}" height="${BOX}"/></clipPath>` +
-    `<linearGradient id="up-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${upTint}" stop-opacity=".16"/><stop offset="1" stop-color="${upTint}" stop-opacity="0"/></linearGradient>` +
-    `<linearGradient id="down-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.bottom}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${downTint}" stop-opacity=".16"/><stop offset="1" stop-color="${downTint}" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="up-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.top}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${upTint}" stop-opacity=".11"/><stop offset="1" stop-color="${upTint}" stop-opacity="0"/></linearGradient>` +
+    `<linearGradient id="down-wash" gradientUnits="userSpaceOnUse" x1="0" y1="${LINE.bottom}" x2="0" y2="${baseAt.toFixed(1)}"><stop offset="0" stop-color="${downTint}" stop-opacity=".11"/><stop offset="1" stop-color="${downTint}" stop-opacity="0"/></linearGradient>` +
     `</defs>${side('up', upTint)}${side('down', downTint)}</svg>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="5" fill="${colour}" fill-opacity=".12"/>` +
     `<circle cx="${share(LINE.right)}" cy="${share(tipAt)}" r="2" fill="${colour}" fill-opacity=".7"/>` +
